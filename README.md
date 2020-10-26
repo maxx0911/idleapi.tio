@@ -1,6 +1,6 @@
 # idleAPI.tio
 A discord bot that interacts with the Travitia API, specifically the IdleRPG portion.  
-This bot is intended for selhosting.
+This bot is intended for selhosting, and as a demonstration what the API is capable of.
 
 # Installing 
 ## Prerequisites
