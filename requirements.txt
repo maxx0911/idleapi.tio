@@ -1,0 +1,4 @@
+asyncpg
+humanize
+discord.py
+aiohttp
