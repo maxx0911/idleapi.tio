@@ -8,9 +8,9 @@ import discord
 from discord.ext import commands
 from discord.ext.commands.cooldowns import BucketType
 
+from config import api_cooldown
 from utils.checks import *
 from utils.paginator import Paginator
-from config import api_cooldown
 
 
 def elongate(string: str, length: int):
@@ -366,7 +366,6 @@ Found {len(items)} mergable item(s).
 
 `$merge {item_id} {items[0]["id"]}`"""
         )
-
 
     @commands.cooldown(1, api_cooldown, BucketType.user)
     @commands.command(aliases=["item", "i"])

@@ -8,9 +8,9 @@ import discord
 from discord.ext import commands
 from discord.ext.commands.cooldowns import BucketType
 
+from config import api_cooldown
 from utils.checks import dev, has_pro
 from utils.paginator import Paginator
-from config import api_cooldown
 
 
 def chunks(iterable, size):

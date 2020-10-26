@@ -14,7 +14,11 @@ class Errors(commands.Cog):
             return
         elif isinstance(error, commands.CommandOnCooldown):
             time = timedelta(seconds=int(error.retry_after))
-            return await ctx.send("You are on cooldown! Try again in {0}.".format(time))
+            return await ctx.send(
+                "You are on cooldown! Try again in {0}.\nAlternatively, take a look at `{1}source` to host your own version!".format(
+                    time, ctx.prefix
+                )
+            )
         elif isinstance(
             error, (commands.errors.UserInputError, commands.errors.BadUnionArgument)
         ):
