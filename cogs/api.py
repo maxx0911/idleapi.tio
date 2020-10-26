@@ -13,9 +13,6 @@ from utils.paginator import Paginator
 
 
 def elongate(string: str, length: int):
-    # if length < len(string):
-    #     raise ValueError(
-    #         f"Cannot elongate string shorter than it is: {string} is {len(string)} characters long; length is {length}")
     done = f"{string}{' ' * (length - len(string))}"
     return done
 
@@ -116,7 +113,7 @@ class Api(commands.Cog):
         """
         user = user or ctx.author.id
         person = await self.bot.fetch_user(user)
-        query = f"https://public-api.travitia.xyz/idle/allitems?select=id,damage,armor,name, type,inventory(equipped)d&owner=eq.{user}&inventory.equipped=is.true"
+        query = f"https://public-api.travitia.xyz/idle/allitems?select=id,damage,armor,name,type,inventory(equipped)d&owner=eq.{user}&inventory.equipped=is.true"
         await self.bot.check_for_error_500()
         async with self.bot.session.get(
             query, headers={"Authorization": self.bot.config.api_token}
@@ -211,23 +208,6 @@ class Api(commands.Cog):
         """Finds an item that would be ideal to merge, based on the given item ID or type.
 
         Equipped items, as well as items with a signature are automatically filtered out."""
-
-        # TODO what we want to do is kinda of store the user inventory
-        # do three requests:
-        #  first checks the length of inventory
-        #  second and third get the rest of the inventory
-        #
-        # find items in a 1-5 range, or even a 6 range
-        # priority:
-        #  bigger range, then bigger stats
-        #  i.e. if you have a 30-25 pair, it's better than a 37-35 pair, because of the bigger range
-        # 5 6(propose upgrade) 4 3 2 1
-        #
-        # if its not good enough, wait and request more items
-        #  consider the items with +6 from the last list
-        #  user choice
-        # +6 is met with $upgrade message
-        # ask beaver if need be
 
         if isinstance(item, int):
             query = f"https://public-api.travitia.xyz/idle/allitems?select=*,inventory(equipped)&id=eq.{item}"
@@ -386,72 +366,6 @@ Found {len(items)} mergable item(s).
 `$merge {item_id} {items[0]["id"]}`"""
         )
 
-    '''
-    @commands.command(enabled=False)
-    async def typemerge(self, ctx, itemtype: str.title, mergetype: str = "bottom"):
-        """Find the best item merge combination for an item type. Potentially.
-
-        The command may fail because of API limitations.
-
-        mergetype can be bottom or top:
-          bottom merges items from the bottom up (lower items first)
-          top merges from the top down (higher items first)"""
-        valid_types = {
-            "Sword":  41,
-            "Shield": 41,
-            "Axe":    41,
-            "Wand":   41,
-            "Dagger": 41,
-            "Knife":  41,
-            "Spear":  41,
-            "Bow":    82,
-            "Hammer": 41,
-            "Scythe": 82,
-            "Howlet": 82,
-        }
-        if itemtype not in valid_types.keys():
-            return await ctx.send(f"`{itemtype}` is not a valid item type.")
-
-        if mergetype.lower() not in ["bottom", "top"]:
-            return await ctx.send("`mergetype` needs to be `top` or `bottom`. Check the command help for details.")
-        htl = True if mergetype == "top" else False
-        # high to low; reverses the order in sorted()
-
-        query = (
-            f"https://public-api.travitia.xyz/idle/allitems?"
-            f"select=*,inventory(equipped)&type=eq.{item.title()}&owner=eq.{ctx.author.id}&limit=1"
-        )
-
-        await self.bot.check_for_error_500()
-        async with self.bot.session.get(
-            query, headers={"Authorization": self.bot.config.api_token}
-        ) as r:
-            status = r.status
-            if status != 200:
-                if int(status / 100) == 5:
-                    await self.bot.redis.execute(
-                        "SET", f"travapi:520", "timeout", "EX", 3600
-                    )
-                    return await ctx.send(
-                        "The API returned a 5XX error code. This means it is currently not available."
-                        " Please try again in one hour."
-                    )
-                elif status == 429:
-                    return await ctx.send(
-                        "429: Too many requests. The API only allows three requests per"
-                        " ten seconds."
-                    )
-            res = await r.json()
-
-        if not res:
-            return await ctx.send(f"You don't have any `{itemtype}`s.")
-
-        items = sorted(
-            res, key=lambda x: x["damage"] + x["armor"], reverse=htl)
-        # items sorted by mergetype strategy; low to high or high to low
-
-        # TODO everything else
-    '''
 
     @commands.cooldown(1, self.bot.config.api_cooldown, BucketType.user)
     @commands.command(aliases=["item", "i"])
@@ -489,21 +403,6 @@ Found {len(items)} mergable item(s).
             )
 
         item = res[0]
-
-        itemtypes = {
-            "Sword": "assets/sword.png",
-            "Dagger": "assets/dagger.png",
-            "Axe": "assets/axe.png",
-            "Knife": "assets/knife.png",
-            "Hammer": "assets/hammer.png",
-            "Shield": "assets/shield.png",
-            "Wand": "assets/wand.png",
-            "Spear": "assets/spear.png",
-            "Bow": "assets/bow.png",
-            "Scythe": "assets/scythe.png",
-            "Howlet": "assets/howlet.png",
-        }
-        # file = discord.File(itemtypes.get(item["type"]), filename=f"{item['type']}.png")
 
         pn = "An" if item["type"].startswith(("A", "E", "I", "O", "U")) else "A"
         doa = "armor" if item["type"] == "Shield" else "damage"
