@@ -10,6 +10,7 @@ from discord.ext.commands.cooldowns import BucketType
 
 from utils.checks import dev, has_pro
 from utils.paginator import Paginator
+from config import api_cooldown
 
 
 def chunks(iterable, size):
@@ -78,7 +79,7 @@ class Merch(commands.Cog):
         return [dmg, dfn]
 
     @has_pro()
-    @commands.cooldown(1, self.bot.config.api_cooldown, BucketType.user)
+    @commands.cooldown(1, api_cooldown, BucketType.user)
     @commands.command(aliases=["favourite", "favorite", "fav"])
     async def protect(self, ctx, *ids: int):
         """Protect items so that they will not be included in merch searches.
@@ -152,7 +153,7 @@ class Merch(commands.Cog):
         await ctx.send("Cleared your protected items list.")
 
     @has_pro()
-    @commands.cooldown(1, self.bot.config.api_cooldown, BucketType.user)
+    @commands.cooldown(1, api_cooldown, BucketType.user)
     @commands.command()
     async def viewfav(self, ctx):
         """View a list of your protected items."""
@@ -199,7 +200,7 @@ class Merch(commands.Cog):
             extras.append(e)
         await Paginator(extras=extras).paginate(ctx)
 
-    @commands.cooldown(1, self.bot.config.api_cooldown, BucketType.user)
+    @commands.cooldown(1, api_cooldown, BucketType.user)
     @commands.command(aliases=["merchant", "merchall"])
     async def merch(
         self,
@@ -351,7 +352,7 @@ class Merch(commands.Cog):
             except discord.Forbidden:
                 await out.remove_reaction("\U0001F5D1", ctx.me)
 
-    @commands.cooldown(1, self.bot.config.api_cooldown, BucketType.user)
+    @commands.cooldown(1, api_cooldown, BucketType.user)
     @commands.command(aliases=["xmerchant", "xmerchall"])
     async def xmerch(self, ctx, *, args=None):
         """
