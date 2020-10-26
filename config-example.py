@@ -15,4 +15,7 @@ postgres_login = {
     "host": "127.0.0.1",
 }
 
+"""User cooldown for API commands. This will set a cooldown for API commands to make sure your token is not reset because of overuse."""
+api_cooldown = 30
+
 bans = []

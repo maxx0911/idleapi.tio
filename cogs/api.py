@@ -38,6 +38,7 @@ class Api(commands.Cog):
             "user_settings",
         ]
 
+    @commands.cooldown(1, self.bot.config.api_cooldown, BucketType.user)
     @commands.command()
     async def get(self, ctx, *, query: str):
         """
@@ -106,6 +107,7 @@ class Api(commands.Cog):
         )
         await ctx.send(embed=embed, file=File)
 
+    @commands.cooldown(1, self.bot.config.api_cooldown, BucketType.user)
     @commands.command()
     async def items(self, ctx, user: int = None):
         """
@@ -146,6 +148,7 @@ class Api(commands.Cog):
         )
         await ctx.send(embed=embed)
 
+    @commands.cooldown(1, self.bot.config.api_cooldown, BucketType.user)
     @commands.command(aliases=["p", "pp", "me"])
     async def profile(
         self, ctx, *, user: Union[discord.User, discord.Member, int] = None
@@ -202,7 +205,7 @@ class Api(commands.Cog):
             )
             await ctx.send(embed=embed)
 
-    # @dev()
+    @commands.cooldown(1, self.bot.config.api_cooldown, BucketType.user)
     @commands.command()
     async def merge(self, ctx, item: Union[int, str]):
         """Finds an item that would be ideal to merge, based on the given item ID or type.
@@ -450,6 +453,7 @@ Found {len(items)} mergable item(s).
         # TODO everything else
     '''
 
+    @commands.cooldown(1, self.bot.config.api_cooldown, BucketType.user)
     @commands.command(aliases=["item", "i"])
     async def iteminfo(self, ctx, itemid: int):
         """Get an info on an item, from its owner to signature and stats."""
