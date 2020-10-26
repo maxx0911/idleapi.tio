@@ -54,6 +54,11 @@ class Miscellaneous(commands.Cog):
         )
         await ctx.send(embed=embed)
 
+    @commands.command(aliases=["src"])
+    async def source(self, ctx):
+        """Check out the inner workings of idleAPI.tio and host your own instance"""
+        await ctx.send("Check out https://github.com/maxx0911/idleapi.tio")
+
 
 def setup(bot):
     bot.add_cog(Miscellaneous(bot))
