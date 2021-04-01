@@ -40,3 +40,24 @@ class IntAboveZero(commands.Converter):
             raise commands.BadArgument("Please choose a number above zero.")
 
         return arg
+
+
+class IntRange(commands.Converter):
+    async def convert(self, ctx, arg):
+        try:
+            arg = [int(arg)]
+        except ValueError:
+            args = arg.split("-")
+            if not len(args) == 2:
+                raise commands.BadArgument("Invalid integer range given")
+            try:
+                _from, _to = int(args[0]), int(args[1])
+            except ValueError:
+                raise commands.BadArgument("Invalid integer range given")
+
+            if not _from < _to:
+                _from, _to = _to, _from
+
+            arg = list(range(_from, _to))
+
+        return arg

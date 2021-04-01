@@ -8,6 +8,7 @@ import discord
 from discord.ext import commands
 from discord.ext.commands.cooldowns import BucketType
 
+from classes.converters import IntRange
 from config import api_cooldown
 from utils.checks import *
 from utils.paginator import Paginator
@@ -426,8 +427,9 @@ Found {len(items)} mergable item(s).
 
     @commands.cooldown(1, api_cooldown, BucketType.user)
     @commands.command(aliases=["item", "i"])
-    async def iteminfo(self, ctx, *itemids: int):
+    async def iteminfo(self, ctx, *itemids: IntRange):
         """Get info on item(s), from their owners to signatures and stats."""
+        itemids = [item for sublist in itemids for item in sublist]
         if not itemids:
             return await ctx.send(
                 "Please supply some Item IDs, for example `< item 123 234 345`"
