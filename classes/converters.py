@@ -58,6 +58,6 @@ class IntRange(commands.Converter):
             if not _from < _to:
                 _from, _to = _to, _from
 
-            arg = list(range(_from, _to))
+            arg = list(range(_from, _to + 1))
 
         return arg
