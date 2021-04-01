@@ -21,6 +21,7 @@ def elongate(string: str, length: int):
 class Api(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.base_url = "https://public-api.travitia.xyz/idle/"
         self.endpoints = [
             "allitems",
             "children",
@@ -35,6 +36,46 @@ class Api(commands.Cog):
             "transactions",
             "user_settings",
         ]
+        self.xp_table = {
+            1: 0,
+            2: 1500,
+            3: 9000,
+            4: 22500,
+            5: 42000,
+            6: 67500,
+            7: 99000,
+            8: 136500,
+            9: 180000,
+            10: 229500,
+            11: 285000,
+            12: 346500,
+            13: 414000,
+            14: 487500,
+            15: 567000,
+            16: 697410,
+            17: 857814,
+            18: 1055112,
+            19: 1297787,
+            20: 1596278,
+            21: 1931497,
+            22: 2298481,
+            23: 2689223,
+            24: 3092606,
+            25: 3494645,
+            26: 3879056,
+            27: 4228171,
+            28: 4608707,
+            29: 5023490,
+            30: 5475604,
+        }
+
+    def get_level(self, xp) -> int:
+        for level, point in self.xp_table.items():
+            if xp == point:
+                return level
+            elif xp < point:
+                return level - 1
+        return 30
 
     @commands.cooldown(1, api_cooldown, BucketType.user)
     @commands.command()
@@ -46,7 +87,7 @@ class Api(commands.Cog):
         The "https://public-api.travitia.xyz/idle/" part of the URL does not need to be included.
         """
         if (
-            not query.startswith("https://public-api.travitia.xyz/idle/")
+            not query.startswith(self.base_url)
             and not query.split("?")[0] in self.endpoints
         ):
             return await ctx.send(
@@ -55,8 +96,8 @@ class Api(commands.Cog):
                 " endpoint:\n\n`{0}`".format(", ".join(self.endpoints))
             )
         query = (
-            "https://public-api.travitia.xyz/idle/" + query
-            if not query.startswith("https://public-api.travitia.xyz/idle/")
+            self.base_url + query
+            if not query.startswith(self.base_url)
             else query
         )
         color = 0x00FF00
@@ -114,7 +155,7 @@ class Api(commands.Cog):
         """
         user = user or ctx.author.id
         person = await self.bot.fetch_user(user)
-        query = f"https://public-api.travitia.xyz/idle/allitems?select=id,damage,armor,name,type,inventory(equipped)d&owner=eq.{user}&inventory.equipped=is.true"
+        query = f"{self.base_url}allitems?select=id,damage,armor,name,type,inventory(equipped)d&owner=eq.{user}&inventory.equipped=is.true"
         await self.bot.check_for_error_500()
         async with self.bot.session.get(
             query, headers={"Authorization": self.bot.config.api_token}
@@ -160,7 +201,7 @@ class Api(commands.Cog):
                 person = await self.bot.fetch_user(user)
             except discord.NotFound:
                 return await ctx.send("This user does not exist.")
-        query = f"https://public-api.travitia.xyz/idle/profile?user=eq.{user}"
+        query = f"{self.base_url}profile?user=eq.{user}"
         await self.bot.check_for_error_500()
         async with self.bot.session.get(
             query, headers={"Authorization": self.bot.config.api_token}
@@ -190,7 +231,10 @@ class Api(commands.Cog):
                     if len(str(item) + ":") > max_len:
                         max_len = len(str(item))
                 ponse = "\n".join(
-                    [f"{elongate(x[0]+':', max_len)} {x[1]}" for x in dic.items()]
+                    [
+                        f"{elongate(x[0]+':', max_len)} {x[1]}"
+                        for x in dic.items()
+                    ]
                 )
 
             embed = discord.Embed(
@@ -211,7 +255,7 @@ class Api(commands.Cog):
         Equipped items, as well as items with a signature are automatically filtered out."""
 
         if isinstance(item, int):
-            query = f"https://public-api.travitia.xyz/idle/allitems?select=*,inventory(equipped)&id=eq.{item}"
+            query = f"{self.base_url}allitems?select=*,inventory(equipped)&id=eq.{item}"
 
         else:
             valid_types = {
@@ -235,7 +279,7 @@ class Api(commands.Cog):
             max_ = 82 if valid_types[item] == "both" else 41
             doa = "armor" if item == "Shield" else "damage"
             query = (
-                f"https://public-api.travitia.xyz/idle/allitems?"
+                f"{self.base_url}allitems?"
                 f"select=*,inventory(equipped)&type=eq.{item.title()}&order={doa}.desc&{doa}=lt.{max_}"
                 f"&owner=eq.{ctx.author.id}&limit=1"
             )
@@ -296,20 +340,26 @@ class Api(commands.Cog):
             ):
                 return await ctx.send("Command cancelled.")
         query = (
-            "https://public-api.travitia.xyz/idle/allitems?select=*,inventory(equipped)&armor=gte."
+            "{base_url}allitems?select=*,inventory(equipped)&armor=gte."
             "{_min}&armor=lte.{_max}&type=eq.{_type}&inventory.equipped=is.true&order=armor.asc&signature=is.null"
             "&owner=eq.{owner}".format(
+                base_url=self.base_url,
                 _min=res["armor"] - 5,
-                _max=absmax_ if res["armor"] + 5 >= absmax_ else res["armor"] + 5,
+                _max=absmax_
+                if res["armor"] + 5 >= absmax_
+                else res["armor"] + 5,
                 _type=res["type"],
                 owner=res["owner"],
             )
             if res["type"] == "Shield"
-            else "https://public-api.travitia.xyz/idle/allitems?select=*,inventory(equipped)&damage=gte."
+            else "{base_url}allitems?select=*,inventory(equipped)&damage=gte."
             "{_min}&damage=lte.{_max}&type=eq.{_type}&inventory.equipped=is.true&order=damage.asc&signature=is.null"
             "&owner=eq.{owner}".format(
+                base_url=self.base_url,
                 _min=res["damage"] - 5,
-                _max=absmax_ if res["damage"] + 5 >= absmax_ else res["damage"] + 5,
+                _max=absmax_
+                if res["damage"] + 5 >= absmax_
+                else res["damage"] + 5,
                 _type=res["type"],
                 owner=res["owner"],
             )
@@ -340,7 +390,11 @@ class Api(commands.Cog):
             return await ctx.send("No fitting items found...")
 
         items = sorted(
-            [item for item in nres if not (item["inventory"] or item["id"] == item_id)],
+            [
+                item
+                for item in nres
+                if not (item["inventory"] or item["id"] == item_id)
+            ],
             key=lambda x: x["armor" if res["type"] == "Shield" else "damage"],
         )
 
@@ -349,7 +403,10 @@ class Api(commands.Cog):
 
         warn = (
             f":warning: The best possible item has a higher {doa} than the original item. Consider switching the IDs around."
-            if (items[0]["damage"] + items[0]["armor"] > res["damage"] + res["armor"])
+            if (
+                items[0]["damage"] + items[0]["armor"]
+                > res["damage"] + res["armor"]
+            )
             else ""
         )
 
@@ -369,9 +426,19 @@ Found {len(items)} mergable item(s).
 
     @commands.cooldown(1, api_cooldown, BucketType.user)
     @commands.command(aliases=["item", "i"])
-    async def iteminfo(self, ctx, itemid: int):
-        """Get an info on an item, from its owner to signature and stats."""
-        query = f"https://public-api.travitia.xyz/idle/allitems?id=eq.{itemid}"
+    async def iteminfo(self, ctx, *itemids: int):
+        """Get info on item(s), from their owners to signatures and stats."""
+        if not itemids:
+            return await ctx.send(
+                "Please supply some Item IDs, for example `< item 123 234 345`"
+            )
+        if len(itemids) > 250:
+            await ctx.send(
+                ":warning: Cannot view more than 250 items at a time, only selecting the first 250"
+            )
+            itemids = itemids[0:249]
+        joined_items = ",".join(str(i) for i in itemids)
+        query = f"{self.base_url}allitems?id=in.({joined_items})"
 
         await self.bot.check_for_error_500()
         async with self.bot.session.get(
@@ -395,50 +462,199 @@ Found {len(items)} mergable item(s).
             res = await r.json()
 
         if not res:
-            return await ctx.send(
-                f"""The item with the ID `{itemid}` was not found. This might mean:
-  - You mistyped the ID
-  - The item does not exist *yet*
-  - The item does not exist *anymore* (most likely merched)"""
-            )
+            if len(itemids) == 1:
+                return await ctx.send(
+                    f"""The item with the ID `{itemids[0]}` was not found. This might mean:
+    - You mistyped the ID
+    - The item does not exist *yet*
+    - The item does not exist *anymore* (most likely merched)"""
+                )
+            else:
+                items = ", ".join(str(x) for x in itemids)
+                return await ctx.send(
+                    f"""No items with the IDs `{items}` were found. This might mean:
+    - You mistyped the IDs
+    - The items do not exist *yet*
+    - The items do not exist *anymore* (most likely merched)"""
+                )
 
-        item = res[0]
+        # item = res[0]
 
-        pn = "An" if item["type"].startswith(("A", "E", "I", "O", "U")) else "A"
-        doa = "armor" if item["type"] == "Shield" else "damage"
-        stat = item["damage"] + item["armor"]
-        owner = await self.bot.fetch_user(item["owner"])
+        item_embeds = []
 
-        embed = discord.Embed(
-            title=item["name"],
-            description=f"{pn} {item['type'].lower()} with {stat} {doa}",
-        )
-        # embed.add_thumbnail(url=f"attachment://{item['type']}.png")
-        embed.add_field(
-            name="Currently owned by", value=f"{owner} ({item['owner']})", inline=False
-        )
-        embed.add_field(
-            name="General info",
-            value="Item ID: {0}\nItem value: {1}\nHand used: {2}".format(
-                itemid, item["value"], item["hand"]
-            ),
-            inline=False,
-        )
+        for item in res:
 
-        if item["signature"]:
-            embed.add_field(name="Signature", value=item["signature"], inline=False)
-        if item["original_type"]:
             pn = (
                 "An"
-                if item["original_type"].startswith(("A", "E", "I", "O", "U"))
+                if item["type"].startswith(("A", "E", "I", "O", "U"))
                 else "A"
             )
+            doa = "armor" if item["type"] == "Shield" else "damage"
+            stat = item["damage"] + item["armor"]
+            owner = await self.bot.fetch_user(item["owner"])
+
+            embed = discord.Embed(
+                title=item["name"],
+                description=f"{pn} {item['type'].lower()} with {stat} {doa}",
+            )
+            # embed.add_thumbnail(url=f"attachment://{item['type']}.png")
             embed.add_field(
-                name="Original Type",
-                value=f"This item was originally {pn} {item['original_type']}",
+                name="Currently owned by",
+                value=f"{owner} ({item['owner']})",
+                inline=False,
+            )
+            embed.add_field(
+                name="General info",
+                value="Item ID: {0}\nItem value: {1}\nHand used: {2}".format(
+                    item["id"], item["value"], item["hand"]
+                ),
+                inline=False,
             )
 
-        await ctx.send(embed=embed)
+            if item["signature"]:
+                embed.add_field(
+                    name="Signature", value=item["signature"], inline=False
+                )
+            if item["original_type"]:
+                pn = (
+                    "An"
+                    if item["original_type"].startswith(
+                        ("A", "E", "I", "O", "U")
+                    )
+                    else "A"
+                )
+                embed.add_field(
+                    name="Original Type",
+                    value=f"This item was originally {pn} {item['original_type']}",
+                )
+            item_embeds.append(embed)
+
+        await Paginator(extras=item_embeds).paginate(ctx)
+
+        # await ctx.send(embed=embed)
+
+    def get_guild(self, *, name: str = None, _id: int = None) -> str:
+        if not name and not _id:
+            raise ValueError("Neither name nor ID given")
+        if _id:
+            url = f"{self.base_url}guild?id=eq.{_id}&limit=1"
+        else:
+            url = f"{self.base_url}guild?name=eq.{name}"
+        return url
+
+    @commands.cooldown(1, api_cooldown, BucketType.user)
+    @commands.command(usage="<Name or ID>")
+    async def guildmembers(self, ctx, *, name_or_id: Union[int, str]):
+        """Returns a list of all guild, paginated"""
+        # get the type and get the guild from that
+        if type(name_or_id) == str:
+            url = self.get_guild(name=name_or_id)
+        else:
+            url = self.get_guild(_id=name_or_id)
+
+        async with self.bot.session.get(
+            url, headers={"Authorization": self.bot.config.api_token}
+        ) as r:
+            status = r.status
+            if status != 200:
+                if int(status / 100) == 5:
+                    await self.bot.redis.execute(
+                        "SET", f"travapi:520", "timeout", "EX", 3600
+                    )
+                    return await ctx.send(
+                        "The API returned a 5XX error code. This means it is currently not available."
+                        " Please try again in one hour."
+                    )
+                elif status == 429:
+                    return await ctx.send(
+                        "429: Too many requests. The API only allows three requests per"
+                        " ten seconds."
+                    )
+            res = await r.json()
+
+        # this is a guild
+        if not res:
+            helpful = (
+                "Please make sure that capitalization and spelling of the guild name is correct, or use its ID."
+                if type(name_or_id) == str
+                else "Please make sure the ID is correct."
+            )
+            return await ctx.send(f"Guild `{name_or_id}` not found. {helpful}")
+
+        # now we actually have a guild
+        # we get the members by its ID
+        guild_id = res[0]["id"]
+        url = f"{self.base_url}profile?guild=eq.{guild_id}"
+        async with self.bot.session.get(
+            url, headers={"Authorization": self.bot.config.api_token}
+        ) as r:
+            status = r.status
+            if status != 200:
+                if int(status / 100) == 5:
+                    await self.bot.redis.execute(
+                        "SET", f"travapi:520", "timeout", "EX", 3600
+                    )
+                    return await ctx.send(
+                        "The API returned a 5XX error code. This means it is currently not available."
+                        " Please try again in one hour."
+                    )
+                elif status == 429:
+                    return await ctx.send(
+                        "429: Too many requests. The API only allows three requests per"
+                        " ten seconds."
+                    )
+            res = await r.json()
+
+        # now we have a list of members
+        if not res:
+            return await ctx.send(
+                "Somehow this guild does not have any members. I have no idea how this happened."
+            )
+
+        if await ctx.confirm(
+            "Do you wanna get the usernames too? Might take a while."
+        ):
+            GET_USERNAMES = True
+        else:
+            GET_USERNAMES = False
+
+        embeds = []
+
+        async with ctx.channel.typing():
+            for member in res:
+                member["level"] = self.get_level(member["xp"])
+                if GET_USERNAMES:
+                    member["username"] = ctx.guild.get_member(member["user"])
+                    if not member["username"]:
+                        member["username"] = await self.bot.fetch_user(
+                            member["user"]
+                        )
+                        # await asyncio.sleep(0.5)
+                else:
+                    member["username"] = member["user"]
+
+                max_len = 0
+                for item in member.keys():
+                    if len(str(item) + ":") > max_len:
+                        max_len = len(str(item))
+                ponse = "\n".join(
+                    [
+                        f"{elongate(x[0]+':', max_len)} {x[1]}"
+                        for x in member.items()
+                    ]
+                )
+
+                embed = discord.Embed(
+                    title=str(member["username"]),
+                    description=f"""\
+```
+{ponse}
+```
+""",
+                )
+                embeds.append(embed)
+
+        await Paginator(extras=embeds).paginate(ctx)
 
 
 def setup(bot):

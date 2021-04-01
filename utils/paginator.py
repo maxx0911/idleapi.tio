@@ -169,3 +169,56 @@ class Paginator:
         self.eof = float(len(self.pages) - 1)
         # self.controls["⏭"] = self.eof
         self.controller = ctx.bot.loop.create_task(self.reaction_controller(ctx))
+
+
+class MemberGetterPaginator(Paginator):
+    __slots__ = (
+        "entries",
+        "extras",
+        "title",
+        "description",
+        "colour",
+        "footer",
+        "length",
+        "prepend",
+        "append",
+        "fmt",
+        "timeout",
+        "ordered",
+        "controls",
+        "controller",
+        "pages",
+        "current",
+        "previous",
+        "eof",
+        "base",
+        "names",
+        "get_usernames"
+    )
+
+    async def paginate(self, ctx):
+        if self.extras:
+            self.pages = [p for p in self.extras if isinstance(p, discord.Embed)]
+
+        if self.entries:
+            chunks = [c async for c in pager(self.entries, self.length)]
+
+            for index, chunk in enumerate(chunks):
+                page = discord.Embed(
+                    title=f"{self.title} - {index + 1}/{len(chunks)}", color=self.colour
+                )
+                page.description = self.formmater(chunk)
+
+                if hasattr(self, "footer"):
+                    if self.footer:
+                        page.set_footer(text=self.footer)
+                self.pages.append(page)
+
+        if not self.pages:
+            raise ValueError(
+                "There must be enough data to create at least 1 page for pagination."
+            )
+
+        self.eof = float(len(self.pages) - 1)
+        # self.controls["⏭"] = self.eof
+        self.controller = ctx.bot.loop.create_task(self.reaction_controller(ctx))

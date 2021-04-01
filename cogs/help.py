@@ -106,7 +106,8 @@ class Help(commands.Cog):
                         delete_after=10,
                     )
             if isinstance(entity, commands.Command):
-                usage = ctx.prefix + entity.name + f" {entity.signature}"
+                usage = f"{ctx.prefix} {entity.name} {entity.usage or entity.signature}"
+                # usage = ctx.prefix + entity.name + (entity.usage or f" {entity.signature}")
                 entries = [
                     f"**:video_game: Command Usage**\n```ini\n{usage}```",
                     f"**Command Help**\n```\n{entity.help}```",
